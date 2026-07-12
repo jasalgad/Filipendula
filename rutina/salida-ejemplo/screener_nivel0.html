@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Screener · Nivel 0 · Sistema multiagente de inversión</title>
+<style>
+:root {
+  --bg:#0D1B2A; --panel:#13273D; --panel2:#1B3A5C; --text:#E8EEF5; --muted:#8FA3B8;
+  --accent:#F0A500; --green:#4CAF50; --red:#E05263; --blue:#4A90D9; --border:#274863;
+}
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,Segoe UI,Roboto,sans-serif; margin:0; padding:24px; }
+h1 { font-size:22px; margin:0 0 4px; }
+.sub { color:var(--muted); font-size:13px; margin-bottom:20px; }
+.disclaimer { background:#1B3A5C; border-left:4px solid var(--accent); padding:12px 16px; border-radius:6px; font-size:13px; color:var(--muted); margin-bottom:20px; }
+.disclaimer b { color:var(--text); }
+.funnel { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.funnel div { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center; flex:1; min-width:110px; }
+.funnel div span.n { display:block; font-size:22px; font-weight:700; color:var(--accent); }
+.funnel div span.l { font-size:11px; color:var(--muted); }
+.controls { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+.controls .field { display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--muted); }
+.controls input, .controls select { background:#0D1B2A; color:var(--text); border:1px solid var(--border); border-radius:5px; padding:5px 8px; font-size:12px; }
+.toggle-wrap { display:flex; align-items:center; gap:8px; background:#0D1B2A; border:1px solid var(--border); border-radius:20px; padding:4px; }
+.toggle-wrap button { background:transparent; border:none; color:var(--muted); padding:6px 14px; border-radius:16px; font-size:12px; cursor:pointer; }
+.toggle-wrap button.active { background:var(--accent); color:#0D1B2A; font-weight:600; }
+table { width:100%; border-collapse:collapse; background:var(--panel); border-radius:8px; overflow:hidden; }
+th, td { padding:9px 10px; text-align:left; font-size:12.5px; border-bottom:1px solid var(--border); }
+th { background:var(--panel2); color:var(--muted); font-weight:600; cursor:pointer; user-select:none; position:sticky; top:0; }
+tr:hover { background:#1B3A5C; cursor:pointer; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+.dot.g{background:var(--green);} .dot.y{background:var(--accent);} .dot.r{background:var(--red);}
+.badge { padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge.compra{background:rgba(76,175,80,.18); color:var(--green);}
+.badge.neutral{background:rgba(240,165,0,.18); color:var(--accent);}
+.badge.venta{background:rgba(224,82,99,.18); color:var(--red);}
+.ilustr { font-size:10px; color:var(--muted); font-style:italic; }
+#modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:50; }
+#modal { position:fixed; top:5%; left:50%; transform:translateX(-50%); width:min(640px,92vw); max-height:90vh; overflow:auto;
+  background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:22px; z-index:51; }
+#modal h2 { margin-top:0; color:var(--accent); }
+#modal table { background:transparent; }
+#modal .formula { background:#0D1B2A; padding:10px; border-radius:6px; font-family:monospace; font-size:11.5px; margin:8px 0; color:var(--blue); }
+#modal pre { background:#0D1B2A; padding:10px; border-radius:6px; font-size:11px; overflow:auto; color:#B8C6D8; }
+#modal .close { position:absolute; top:14px; right:18px; cursor:pointer; color:var(--muted); font-size:20px; }
+footer { margin-top:24px; color:var(--muted); font-size:12px; border-top:1px solid var(--border); padding-top:14px; }
+.legend { font-size:11px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<h1>🔎 Screener · Nivel 0 del embudo multiagente</h1>
+<div class="sub">Universo: 56 acciones individuales de tu watchlist real (~acciones_claude) · ETFs/ETCs/índices excluidos por no tener PER/ROE aplicables</div>
+
+<div class="disclaimer">
+<b>Postura epistémica:</b> este screener es <b>cribado GRUESO</b>: sugiere candidatas, no las confirma (eso lo hacen los subagentes).
+Los datos <b>técnicos</b> (RSI, tendencia, SMA, distancia a máximos) son <b>REALES</b>, calculados con <code>analizar_tecnico.py</code>
+sobre tu histórico local en <code>~/acciones_claude/datos/</code>. Los datos <b>fundamentales</b> (PER, ROE, Deuda/EBITDA) y de
+<b>sentimiento</b> (consenso analistas) son <b>ILUSTRATIVOS/APROXIMADOS</b> — no proceden de una fuente en vivo verificada en
+esta ejecución, así que trátalos como orden de magnitud, no como dato de mercado del día. Pesos, umbrales y la métrica
+fundamental elegida (PER vs mediana) son decisiones, no leyes. El scoring <b>absoluto</b> castiga a la tecnología (PER
+estructuralmente alto) y premia a la banca — por eso existe el toggle Sectorial/Absoluto: para que ese sesgo sea visible,
+no invisible.
+<br><br><b>Aliciente añadido — Fase del método tendencial:</b> se calcula la <b>Fase I más reciente</b> (tramo alcista real
+≥20% sostenido ≥2 meses, detectado por zigzag 15% sobre velas semanales de tu histórico local) y, según en qué fase esté
+el precio hoy respecto a ese tramo, se aplica un <b>bonus/malus</b> sobre el score base (fund+téc+sent): Fase III
+(reactivación potencial) +10 · Fase I (extensión) +5 · Fase II (corrección en curso) +0 · Invalidada (perforó 61,8%) -15.
+Esto es un empujón, no una cuarta dimensión al mismo nivel — el dato de fase SÍ es real (tu histórico local), pero los
+pesos del bonus son una decisión debatible, igual que el resto de umbrales de este screener.
+Material educativo, no recomendación de inversión.
+</div>
+
+<div class="funnel" id="funnel"></div>
+
+<div class="controls">
+  <div class="toggle-wrap">
+    <button id="btn-sect" class="active" onclick="setModo('sectorial')">Sectorial</button>
+    <button id="btn-abs" onclick="setModo('absoluto')">Absoluto</button>
+  </div>
+  <div class="field"><label>PER máx</label><input id="f-per" type="number" placeholder="ej 30"></div>
+  <div class="field"><label>ROE mín %</label><input id="f-roe" type="number" placeholder="ej 10"></div>
+  <div class="field"><label>Deuda/EBITDA máx</label><input id="f-deuda" type="number" placeholder="ej 3"></div>
+  <div class="field"><label>RSI mín</label><input id="f-rsimin" type="number" placeholder="0"></div>
+  <div class="field"><label>RSI máx</label><input id="f-rsimax" type="number" placeholder="100"></div>
+  <div class="field"><label>Tendencia</label>
+    <select id="f-tend"><option value="">Todas</option><option>alcista</option><option>lateral</option><option>bajista</option></select>
+  </div>
+  <div class="field"><label>Consenso</label>
+    <select id="f-cons"><option value="">Todos</option><option>comprar</option><option>mantener</option><option>vender</option></select>
+  </div>
+  <div class="field"><label>Score mín</label><input id="f-score" type="number" placeholder="0"></div>
+  <div class="field"><button onclick="render()" style="background:var(--accent);color:#0D1B2A;border:none;padding:7px 16px;border-radius:5px;font-weight:600;cursor:pointer;">Filtrar</button></div>
+  <div class="field"><button onclick="reset()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:7px 16px;border-radius:5px;cursor:pointer;">Reset</button></div>
+</div>
+
+<table>
+  <thead><tr>
+    <th onclick="sortBy('ticker')">Ticker</th><th onclick="sortBy('nombre')">Nombre</th><th>Sector</th>
+    <th onclick="sortBy('per')">PER<div class="ilustr">ilustr.</div></th>
+    <th onclick="sortBy('roe')">ROE%<div class="ilustr">ilustr.</div></th>
+    <th onclick="sortBy('rsi14_semanal')">RSI14 sem<div class="ilustr">real</div></th>
+    <th onclick="sortBy('tendencia')">Tendencia<div class="ilustr">real</div></th>
+    <th onclick="sortBy('consenso')">Consenso<div class="ilustr">ilustr.</div></th>
+    <th onclick="sortBy('fase_actual')">Fase tendencial<div class="ilustr">real</div></th>
+    <th onclick="sortBy('scoreActivo')">Score</th><th>Señal</th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+<div class="legend">Click en una fila → desglose auditable del score. "real" = calculado sobre tus CSV locales. "ilustr." = aproximado, sin fuente en vivo.</div>
+
+<div id="modal-bg" onclick="closeModal()"></div>
+<div id="modal"></div>
+
+<footer>
+Sistema multiagente de inversión · Screener Nivel 0 · Generado localmente a partir de ~/acciones_claude ·
+Material educativo, no recomendación de inversión. Pesos compuestos 40% fundamental / 35% técnico / 25% sentimiento — debatibles.
+¿Qué cambiarías de estos umbrales? Este screener funciona mejor si lo cuestionas.
+</footer>
+
+<script>
+const DATA = [{"ticker": "JPM", "nombre": "JPMorgan Chase", "mercado": "S&P", "sector": "Banca", "per": 12, "roe": 16, "deuda_ebitda": null, "consenso": "comprar", "precio_actual": 335.45, "fecha_precio": "2026-07-09", "rsi14_semanal": 63.62, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -1.89, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 12, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 1.0, "ratio_absoluto": 0.67, "tec_score": 92.8, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 95.275}, "sent_score": 85, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 93.7, "base_score_absoluto": 93.7, "score_sectorial": 98.7, "score_absoluto": 98.7, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "GOOGL", "nombre": "Alphabet", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 24, "roe": 30, "deuda_ebitda": 0.1, "consenso": "comprar", "precio_actual": 356.86, "fecha_precio": "2026-07-09", "rsi14_semanal": 56.68, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -12.61, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 66.7, "ratio_sectorial": 0.96, "ratio_absoluto": 1.33, "tec_score": 88.8, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 68.475}, "sent_score": 85, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 92.3, "base_score_absoluto": 79.0, "score_sectorial": 97.3, "score_absoluto": 84.0, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "AMGN", "nombre": "Amgen", "mercado": "S&P", "sector": "Biotecnologia", "per": 16, "roe": 60, "deuda_ebitda": 3.5, "consenso": "mantener", "precio_actual": 362.97, "fecha_precio": "2026-07-09", "rsi14_semanal": 61.91, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -6.54, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 16, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 1.0, "ratio_absoluto": 0.89, "tec_score": 91.0, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 83.65}, "sent_score": 50, "fase_actual": "Fase III (reactivación potencial)", "fase_bonus": 10, "base_score_sectorial": 84.4, "base_score_absoluto": 84.4, "score_sectorial": 94.4, "score_absoluto": 94.4, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "AAPL", "nombre": "Apple", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 30, "roe": 150, "deuda_ebitda": 1.5, "consenso": "comprar", "precio_actual": 313.29, "fecha_precio": "2026-07-10", "rsi14_semanal": 62.58, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -1.3, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 80.0, "fund_score_absoluto": 33.3, "ratio_sectorial": 1.2, "ratio_absoluto": 1.67, "tec_score": 93.0, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 96.75}, "sent_score": 85, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 85.8, "base_score_absoluto": 67.1, "score_sectorial": 90.8, "score_absoluto": 72.1, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "MU", "nombre": "Micron", "mercado": "S&P", "sector": "Semiconductores", "per": 18, "roe": 15, "deuda_ebitda": 0.5, "consenso": "comprar", "precio_actual": 1017.79, "fecha_precio": "2026-07-09", "rsi14_semanal": 68.58, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -18.89, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 0.82, "ratio_absoluto": 1.0, "tec_score": 75.9, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 52.775}, "sent_score": 85, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 87.8, "base_score_absoluto": 87.8, "score_sectorial": 87.8, "score_absoluto": 87.8, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "NVDA", "nombre": "Nvidia", "mercado": "S&P", "sector": "Semiconductores", "per": 27.27, "roe": 93.2, "deuda_ebitda": 0.04, "consenso": "comprar", "precio_actual": 203.66, "fecha_precio": "2026-07-09", "rsi14_semanal": 49.95, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -13.9, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 76.0, "fund_score_absoluto": 48.5, "ratio_sectorial": 1.24, "ratio_absoluto": 1.51, "tec_score": 88.3, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 65.25}, "sent_score": 85, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 82.6, "base_score_absoluto": 71.6, "score_sectorial": 87.6, "score_absoluto": 76.6, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "QCOM", "nombre": "Qualcomm", "mercado": "S&P", "sector": "Semiconductores", "per": 16, "roe": 30, "deuda_ebitda": 0.5, "consenso": "mantener", "precio_actual": 191.45, "fecha_precio": "2026-07-09", "rsi14_semanal": 49.14, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -26.34, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 0.73, "ratio_absoluto": 0.89, "tec_score": 83.6, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 34.150000000000006}, "sent_score": 50, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 81.8, "base_score_absoluto": 81.8, "score_sectorial": 86.8, "score_absoluto": 86.8, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "XYZ", "nombre": "Block Inc", "mercado": "S&P", "sector": "Fintech/Pagos", "per": 35, "roe": 6, "deuda_ebitda": 1.0, "consenso": "mantener", "precio_actual": 77.43, "fecha_precio": "2026-07-09", "rsi14_semanal": 59.97, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -6.14, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 37.5, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 5.6, "ratio_sectorial": 0.93, "ratio_absoluto": 1.94, "tec_score": 91.2, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 84.65}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 84.4, "base_score_absoluto": 46.6, "score_sectorial": 84.4, "score_absoluto": 46.6, "signal_sectorial": "compra", "signal_absoluto": "neutral"}, {"ticker": "ADM", "nombre": "ADM", "mercado": "S&P", "sector": "Consumo basico", "per": 13, "roe": 11, "deuda_ebitda": 2.0, "consenso": "mantener", "precio_actual": 79.38, "fecha_precio": "2026-07-09", "rsi14_semanal": 58.53, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -7.02, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 18.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 0.72, "ratio_absoluto": 0.72, "tec_score": 90.9, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 82.45}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 84.3, "base_score_absoluto": 84.3, "score_sectorial": 84.3, "score_absoluto": 84.3, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "MS", "nombre": "Morgan Stanley", "mercado": "S&P", "sector": "Banca", "per": 14, "roe": 12, "deuda_ebitda": null, "consenso": "comprar", "precio_actual": 223.15, "fecha_precio": "2026-07-09", "rsi14_semanal": 67.87, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -3.18, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 12, "mediana_absoluta_per": 18, "fund_score_sectorial": 83.3, "fund_score_absoluto": 100, "ratio_sectorial": 1.17, "ratio_absoluto": 0.78, "tec_score": 81.8, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 92.05}, "sent_score": 85, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 83.2, "base_score_absoluto": 89.9, "score_sectorial": 83.2, "score_absoluto": 89.9, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "CB", "nombre": "Chubb", "mercado": "S&P", "sector": "Seguros", "per": 14, "roe": 13, "deuda_ebitda": null, "consenso": "comprar", "precio_actual": 349.28, "fecha_precio": "2026-07-09", "rsi14_semanal": 68.91, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -3.33, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 11.5, "mediana_absoluta_per": 18, "fund_score_sectorial": 78.3, "fund_score_absoluto": 100, "ratio_sectorial": 1.22, "ratio_absoluto": 0.78, "tec_score": 81.8, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 91.675}, "sent_score": 85, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 81.2, "base_score_absoluto": 89.9, "score_sectorial": 81.2, "score_absoluto": 89.9, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "CSCO", "nombre": "Cisco", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 17, "roe": 27, "deuda_ebitda": 1.0, "consenso": "mantener", "precio_actual": 118.56, "fecha_precio": "2026-07-09", "rsi14_semanal": 70.35, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -8.72, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 0.68, "ratio_absoluto": 0.94, "tec_score": 79.7, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 78.2}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 80.4, "base_score_absoluto": 80.4, "score_sectorial": 80.4, "score_absoluto": 80.4, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "TT", "nombre": "Trane Technologies", "mercado": "S&P", "sector": "Industrial", "per": 28, "roe": 30, "deuda_ebitda": 1.0, "consenso": "comprar", "precio_actual": 472.1, "fecha_precio": "2026-07-09", "rsi14_semanal": 60.46, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -6.68, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 20.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 60.0, "fund_score_absoluto": 44.4, "ratio_sectorial": 1.4, "ratio_absoluto": 1.56, "tec_score": 91.0, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 83.3}, "sent_score": 85, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 77.1, "base_score_absoluto": 70.9, "score_sectorial": 77.1, "score_absoluto": 70.9, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "AMD", "nombre": "AMD", "mercado": "S&P", "sector": "Semiconductores", "per": 32, "roe": 8, "deuda_ebitda": 0.3, "consenso": "comprar", "precio_actual": 545.79, "fecha_precio": "2026-07-09", "rsi14_semanal": 72.91, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -6.66, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 54.5, "fund_score_absoluto": 22.2, "ratio_sectorial": 1.45, "ratio_absoluto": 1.78, "tec_score": 80.5, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 83.35}, "sent_score": 85, "fase_actual": "Fase I (extensión, en máximos)", "fase_bonus": 5, "base_score_sectorial": 71.2, "base_score_absoluto": 58.3, "score_sectorial": 76.2, "score_absoluto": 63.3, "signal_sectorial": "compra", "signal_absoluto": "neutral"}, {"ticker": "HOOD", "nombre": "Robinhood", "mercado": "S&P", "sector": "Fintech/Pagos", "per": 40, "roe": 15, "deuda_ebitda": 0.2, "consenso": "comprar", "precio_actual": 116.52, "fecha_precio": "2026-07-09", "rsi14_semanal": 59.67, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -24.27, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 37.5, "mediana_absoluta_per": 18, "fund_score_sectorial": 93.3, "fund_score_absoluto": 0, "ratio_sectorial": 1.07, "ratio_absoluto": 2.22, "tec_score": 84.4, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 39.325}, "sent_score": 85, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 88.1, "base_score_absoluto": 50.8, "score_sectorial": 73.1, "score_absoluto": 35.8, "signal_sectorial": "compra", "signal_absoluto": "venta"}, {"ticker": "AME", "nombre": "AMETEK", "mercado": "S&P", "sector": "Industrial", "per": 27, "roe": 17, "deuda_ebitda": 1.5, "consenso": "mantener", "precio_actual": 234.03, "fecha_precio": "2026-07-09", "rsi14_semanal": 61.22, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -4.36, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 20.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 65.0, "fund_score_absoluto": 50.0, "ratio_sectorial": 1.35, "ratio_absoluto": 1.5, "tec_score": 91.9, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 89.1}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 70.7, "base_score_absoluto": 64.7, "score_sectorial": 70.7, "score_absoluto": 64.7, "signal_sectorial": "compra", "signal_absoluto": "neutral"}, {"ticker": "SNDK", "nombre": "SanDisk", "mercado": "S&P", "sector": "Semiconductores", "per": 20, "roe": 8, "deuda_ebitda": 1.5, "consenso": "mantener", "precio_actual": 1945.81, "fecha_precio": "2026-07-09", "rsi14_semanal": 65.42, "tendencia": "n/d", "cruce_sma": "ninguno", "dist_max_52s_pct": -17.35, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 88.9, "ratio_sectorial": 0.91, "ratio_absoluto": 1.11, "tec_score": 51.0, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 50, "sma_pts": 50, "dist_pts": 56.625}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 70.3, "base_score_absoluto": 65.9, "score_sectorial": 70.3, "score_absoluto": 65.9, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "META", "nombre": "Meta", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 26, "roe": 32, "deuda_ebitda": 0.3, "consenso": "comprar", "precio_actual": 615.98, "fecha_precio": "2026-07-09", "rsi14_semanal": 45.25, "tendencia": "lateral", "cruce_sma": "golden", "dist_max_52s_pct": -22.39, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 96.0, "fund_score_absoluto": 55.6, "ratio_sectorial": 1.04, "ratio_absoluto": 1.44, "tec_score": 67.6, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 50, "sma_pts": 90, "dist_pts": 44.025}, "sent_score": 85, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 83.3, "base_score_absoluto": 67.1, "score_sectorial": 68.3, "score_absoluto": 52.1, "signal_sectorial": "compra", "signal_absoluto": "neutral"}, {"ticker": "KO", "nombre": "Coca-Cola", "mercado": "S&P", "sector": "Consumo basico", "per": 25, "roe": 45, "deuda_ebitda": 2.5, "consenso": "mantener", "precio_actual": 83.57, "fecha_precio": "2026-07-10", "rsi14_semanal": 65.95, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -0.68, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 18.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 61.1, "fund_score_absoluto": 61.1, "ratio_sectorial": 1.39, "ratio_absoluto": 1.39, "tec_score": 82.7, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 98.3}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 65.9, "base_score_absoluto": 65.9, "score_sectorial": 65.9, "score_absoluto": 65.9, "signal_sectorial": "compra", "signal_absoluto": "compra"}, {"ticker": "INTC", "nombre": "Intel", "mercado": "S&P", "sector": "Semiconductores", "per": null, "roe": 2, "deuda_ebitda": 1.8, "consenso": "mantener", "precio_actual": 112.49, "fecha_precio": "2026-07-09", "rsi14_semanal": 65.55, "tendencia": "alcista", "cruce_sma": "golden", "dist_max_52s_pct": -20.98, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 22, "mediana_absoluta_per": 18, "fund_score_sectorial": 35.0, "fund_score_absoluto": 35.0, "ratio_sectorial": null, "ratio_absoluto": null, "tec_score": 75.1, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 100, "sma_pts": 90, "dist_pts": 47.55}, "sent_score": 50, "fase_actual": "Fase II (corrección en curso)", "fase_bonus": 0, "base_score_sectorial": 52.8, "base_score_absoluto": 52.8, "score_sectorial": 52.8, "score_absoluto": 52.8, "signal_sectorial": "neutral", "signal_absoluto": "neutral"}, {"ticker": "ORCL", "nombre": "Oracle", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 32, "roe": 55, "deuda_ebitda": 3.0, "consenso": "comprar", "precio_actual": 144.35, "fecha_precio": "2026-07-09", "rsi14_semanal": 38.76, "tendencia": "lateral", "cruce_sma": "golden", "dist_max_52s_pct": -57.92, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 72.0, "fund_score_absoluto": 22.2, "ratio_sectorial": 1.28, "ratio_absoluto": 1.78, "tec_score": 50.5, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 50, "sma_pts": 90, "dist_pts": 0}, "sent_score": 85, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 67.7, "base_score_absoluto": 47.8, "score_sectorial": 52.7, "score_absoluto": 32.8, "signal_sectorial": "neutral", "signal_absoluto": "venta"}, {"ticker": "MSFT", "nombre": "Microsoft", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 33, "roe": 34, "deuda_ebitda": 0.4, "consenso": "comprar", "precio_actual": 380.61, "fecha_precio": "2026-07-09", "rsi14_semanal": 43.54, "tendencia": "lateral", "cruce_sma": "golden", "dist_max_52s_pct": -30.93, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 68.0, "fund_score_absoluto": 16.7, "ratio_sectorial": 1.32, "ratio_absoluto": 1.83, "tec_score": 53.9, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 50, "sma_pts": 90, "dist_pts": 22.674999999999997}, "sent_score": 85, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 67.3, "base_score_absoluto": 46.8, "score_sectorial": 52.3, "score_absoluto": 31.8, "signal_sectorial": "neutral", "signal_absoluto": "venta"}, {"ticker": "STZ", "nombre": "Constellation Brands", "mercado": "S&P", "sector": "Consumo basico", "per": 16, "roe": 30, "deuda_ebitda": 3.0, "consenso": "mantener", "precio_actual": 131.4, "fecha_precio": "2026-07-09", "rsi14_semanal": 43.36, "tendencia": "bajista", "cruce_sma": "death", "dist_max_52s_pct": -24.23, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 18.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 100, "ratio_sectorial": 0.89, "ratio_absoluto": 0.89, "tec_score": 29.2, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 15, "sma_pts": 15, "dist_pts": 39.425}, "sent_score": 50, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 62.7, "base_score_absoluto": 62.7, "score_sectorial": 47.7, "score_absoluto": 47.7, "signal_sectorial": "neutral", "signal_absoluto": "neutral"}, {"ticker": "ADBE", "nombre": "Adobe", "mercado": "S&P", "sector": "Software", "per": 27, "roe": 34, "deuda_ebitda": 0.5, "consenso": "mantener", "precio_actual": 220.77, "fecha_precio": "2026-07-09", "rsi14_semanal": 38.53, "tendencia": "bajista", "cruce_sma": "death", "dist_max_52s_pct": -42.89, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 32.5, "mediana_absoluta_per": 18, "fund_score_sectorial": 100, "fund_score_absoluto": 50.0, "ratio_sectorial": 0.83, "ratio_absoluto": 1.5, "tec_score": 23.2, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 15, "sma_pts": 15, "dist_pts": 0}, "sent_score": 50, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 60.6, "base_score_absoluto": 40.6, "score_sectorial": 45.6, "score_absoluto": 25.6, "signal_sectorial": "neutral", "signal_absoluto": "venta"}, {"ticker": "PEP", "nombre": "Pepsi", "mercado": "S&P", "sector": "Consumo basico", "per": 22, "roe": 45, "deuda_ebitda": 2.8, "consenso": "mantener", "precio_actual": 137.4, "fecha_precio": "2026-07-09", "rsi14_semanal": 44.34, "tendencia": "bajista", "cruce_sma": "death", "dist_max_52s_pct": -19.16, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 18.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 77.8, "fund_score_absoluto": 77.8, "ratio_sectorial": 1.22, "ratio_absoluto": 1.22, "tec_score": 31.1, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 15, "sma_pts": 15, "dist_pts": 52.1}, "sent_score": 50, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 54.5, "base_score_absoluto": 54.5, "score_sectorial": 39.5, "score_absoluto": 39.5, "signal_sectorial": "venta", "signal_absoluto": "venta"}, {"ticker": "CRM", "nombre": "Salesforce", "mercado": "S&P", "sector": "Software", "per": 38, "roe": 11, "deuda_ebitda": 0.4, "consenso": "mantener", "precio_actual": 162.37, "fecha_precio": "2026-07-09", "rsi14_semanal": 40.43, "tendencia": "bajista", "cruce_sma": "death", "dist_max_52s_pct": -40.85, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 32.5, "mediana_absoluta_per": 18, "fund_score_sectorial": 83.1, "fund_score_absoluto": 0, "ratio_sectorial": 1.17, "ratio_absoluto": 2.11, "tec_score": 23.2, "tec_detalle": {"rsi_pts": 50, "tendencia_pts": 15, "sma_pts": 15, "dist_pts": 0}, "sent_score": 50, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 53.9, "base_score_absoluto": 20.6, "score_sectorial": 38.9, "score_absoluto": 5.6, "signal_sectorial": "venta", "signal_absoluto": "venta"}, {"ticker": "APP", "nombre": "Applovin", "mercado": "S&P", "sector": "Tecnologia/Internet", "per": 55, "roe": 45, "deuda_ebitda": 1.0, "consenso": "comprar", "precio_actual": 516.98, "fecha_precio": "2026-07-09", "rsi14_semanal": 53.02, "tendencia": "lateral", "cruce_sma": "golden", "dist_max_52s_pct": -30.66, "fecha_indicadores_semanales": "2026-07-03", "mediana_sector_per": 25.0, "mediana_absoluta_per": 18, "fund_score_sectorial": 0, "fund_score_absoluto": 0, "ratio_sectorial": 2.2, "ratio_absoluto": 3.06, "tec_score": 64.5, "tec_detalle": {"rsi_pts": 85, "tendencia_pts": 50, "sma_pts": 90, "dist_pts": 23.349999999999994}, "sent_score": 85, "fase_actual": "Invalidada (perforó 61,8% — ya no aplica el método)", "fase_bonus": -15, "base_score_sectorial": 43.8, "base_score_absoluto": 43.8, "score_sectorial": 28.8, "score_absoluto": 28.8, "signal_sectorial": "venta", "signal_absoluto": "venta"}];
+let modo = 'sectorial';
+
+function fmtNum(x, dec=1){ return (x===null||x===undefined) ? 'n/d' : x.toFixed(dec); }
+
+function scoreDe(r){ return modo==='sectorial' ? r.score_sectorial : r.score_absoluto; }
+function signalDe(r){ return modo==='sectorial' ? r.signal_sectorial : r.signal_absoluto; }
+function fundScoreDe(r){ return modo==='sectorial' ? r.fund_score_sectorial : r.fund_score_absoluto; }
+function medianaDe(r){ return modo==='sectorial' ? r.mediana_sector_per : r.mediana_absoluta_per; }
+function ratioDe(r){ return modo==='sectorial' ? r.ratio_sectorial : r.ratio_absoluto; }
+
+function setModo(m){
+  modo = m;
+  document.getElementById('btn-sect').classList.toggle('active', m==='sectorial');
+  document.getElementById('btn-abs').classList.toggle('active', m==='absoluto');
+  render();
+}
+
+function dotClass(signal){
+  if(signal==='compra') return 'g';
+  if(signal==='venta') return 'r';
+  return 'y';
+}
+
+function filtered(){
+  const per = parseFloat(document.getElementById('f-per').value);
+  const roe = parseFloat(document.getElementById('f-roe').value);
+  const deuda = parseFloat(document.getElementById('f-deuda').value);
+  const rsimin = parseFloat(document.getElementById('f-rsimin').value);
+  const rsimax = parseFloat(document.getElementById('f-rsimax').value);
+  const tend = document.getElementById('f-tend').value;
+  const cons = document.getElementById('f-cons').value;
+  const scoreMin = parseFloat(document.getElementById('f-score').value);
+  return DATA.filter(r=>{
+    if(!isNaN(per) && (r.per===null || r.per>per)) return false;
+    if(!isNaN(roe) && (r.roe===null || r.roe<roe)) return false;
+    if(!isNaN(deuda) && (r.deuda_ebitda===null || r.deuda_ebitda>deuda)) return false;
+    if(!isNaN(rsimin) && (r.rsi14_semanal===null || r.rsi14_semanal<rsimin)) return false;
+    if(!isNaN(rsimax) && (r.rsi14_semanal===null || r.rsi14_semanal>rsimax)) return false;
+    if(tend && r.tendencia!==tend) return false;
+    if(cons && r.consenso!==cons) return false;
+    if(!isNaN(scoreMin) && scoreDe(r)<scoreMin) return false;
+    return true;
+  });
+}
+
+let sortField = 'scoreActivo', sortDir = -1;
+function sortBy(field){
+  if(sortField===field) sortDir*=-1; else { sortField=field; sortDir=-1; }
+  render();
+}
+
+function render(){
+  let rows = filtered();
+  rows.sort((a,b)=>{
+    let va = sortField==='scoreActivo' ? scoreDe(a) : a[sortField];
+    let vb = sortField==='scoreActivo' ? scoreDe(b) : b[sortField];
+    if(va===null) va = -Infinity; if(vb===null) vb = -Infinity;
+    if(typeof va==='string') return va.localeCompare(vb)*sortDir;
+    return (va-vb)*sortDir;
+  });
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = rows.map(r=>{
+    const s = scoreDe(r), sig = signalDe(r);
+    return `<tr onclick='openModal(${JSON.stringify(r.ticker)})'>
+      <td><b>${r.ticker}</b></td><td>${r.nombre}</td><td style="font-size:11px;color:var(--muted)">${r.sector}</td>
+      <td>${fmtNum(r.per,1)}</td><td>${fmtNum(r.roe,1)}</td>
+      <td>${fmtNum(r.rsi14_semanal,1)}</td><td>${r.tendencia}</td><td>${r.consenso}</td>
+      <td style="font-size:11px">${r.fase_actual} <span style="color:var(--muted)">(${r.fase_bonus>=0?'+':''}${r.fase_bonus})</span></td>
+      <td><span class="dot ${dotClass(sig)}"></span>${fmtNum(s,1)}</td>
+      <td><span class="badge ${sig}">${sig}</span></td>
+    </tr>`;
+  }).join('');
+
+  const total = DATA.length;
+  const conFund = DATA.filter(r=>r.per!==null).length;
+  const conTecOk = DATA.filter(r=>r.tendencia!=='n/d').length;
+  const candidatas = DATA.filter(r=>scoreDe(r)>=62).length;
+  document.getElementById('funnel').innerHTML = `
+    <div><span class="n">${total}</span><span class="l">Universo (acciones reales)</span></div>
+    <div><span class="n">${conFund}</span><span class="l">+ Fundamental (PER disponible)</span></div>
+    <div><span class="n">${conTecOk}</span><span class="l">+ Técnico (tendencia calculable)</span></div>
+    <div><span class="n">${candidatas}</span><span class="l">Candidatas (score ≥ 62)</span></div>
+    <div><span class="n">${rows.length}</span><span class="l">Visibles (con filtros)</span></div>
+  `;
+}
+
+function reset(){
+  ['f-per','f-roe','f-deuda','f-rsimin','f-rsimax','f-score'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-tend').value=''; document.getElementById('f-cons').value='';
+  render();
+}
+
+function openModal(ticker){
+  const r = DATA.find(x=>x.ticker===ticker);
+  const s = scoreDe(r), sig = signalDe(r), fs = fundScoreDe(r), mediana = medianaDe(r), ratio = ratioDe(r);
+  const td = r.tec_detalle;
+  const contrato = {
+    ticker: r.ticker, score: s, signal: sig,
+    dims: {fund: fs, tec: r.tec_score, sent: r.sent_score},
+    evidence: [
+      {dato:"PER", valor: r.per===null?"n/d":r.per, fuente:"ilustrativo/aproximado, no verificado en vivo"},
+      {dato:`Mediana PER (${modo})`, valor: mediana, fuente:"calculada sobre el universo de 56 valores de este screener"},
+      {dato:"ROE %", valor: r.roe===null?"n/d":r.roe, fuente:"ilustrativo/aproximado"},
+      {dato:"Deuda/EBITDA", valor: r.deuda_ebitda===null?"n/d":r.deuda_ebitda, fuente:"ilustrativo/aproximado"},
+      {dato:"RSI14 semanal", valor: r.rsi14_semanal, fuente:`datos locales · datos/${r.ticker.replace('.','_')}.csv · ${r.fecha_indicadores_semanales}`},
+      {dato:"Tendencia", valor: r.tendencia, fuente:"datos locales, SMA50 vs SMA200 semanal"},
+      {dato:"Cruce SMA 50/200", valor: r.cruce_sma, fuente:"datos locales, semanal"},
+      {dato:"Distancia máx 52s", valor: r.dist_max_52s_pct+"%", fuente:"datos locales, semanal"},
+      {dato:"Consenso analistas", valor: r.consenso, fuente:"ilustrativo/aproximado"},
+      {dato:"Fase tendencial", valor: r.fase_actual, fuente:"datos locales, zigzag 15% + Fibonacci sobre velas semanales"},
+    ],
+    datos_faltantes: r.per===null ? ["PER no disponible -> fundamental penalizado a 35 pts"] : []
+  };
+
+  document.getElementById('modal').innerHTML = `
+    <span class="close" onclick="closeModal()">✕</span>
+    <h2>${r.ticker} · ${r.nombre}</h2>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:10px">${r.sector} · ${r.mercado} · Precio actual: ${r.precio_actual} (${r.fecha_precio})</div>
+    <div class="formula">
+      Fundamental (${modo}): PER ${r.per??'n/d'} / mediana ${mediana??'n/d'} = ratio ${ratio??'n/d'} → ${fs} pts<br>
+      Técnico: RSI ${td.rsi_pts}·0.30 + Tendencia ${td.tendencia_pts}·0.35 + SMA ${td.sma_pts}·0.20 + Dist52s ${td.dist_pts}·0.15 = ${r.tec_score} pts<br>
+      Sentimiento: consenso "${r.consenso}" → ${r.sent_score} pts<br>
+      Base (fund·0.40 + téc·0.35 + sent·0.25) = ${r.base_score_sectorial ?? r.base_score_absoluto} pts<br>
+      Fase tendencial: "${r.fase_actual}" → bonus/malus ${r.fase_bonus>=0?'+':''}${r.fase_bonus} pts<br>
+      <b>Score final = base + aliciente de fase = ${s} → señal: ${sig}</b>
+    </div>
+    <h3 style="font-size:13px;color:var(--muted)">CONTRATO COMÚN (para hub-orquestador)</h3>
+    <pre>${JSON.stringify(contrato, null, 2)}</pre>
+  `;
+  document.getElementById('modal-bg').style.display='block';
+  document.getElementById('modal').style.display='block';
+}
+function closeModal(){
+  document.getElementById('modal-bg').style.display='none';
+  document.getElementById('modal').style.display='none';
+}
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Subagente Macro · Sistema multiagente</title>
+<style>
+:root{--bg:#0D1B2A;--panel:#13273D;--text:#E8EEF5;--muted:#8FA3B8;--accent:#F0A500;--green:#4CAF50;--red:#E05263;--border:#274863;}
+*{box-sizing:border-box} body{background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:24px;}
+h1{font-size:22px;margin:0 0 4px} .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.disclaimer{background:#1B3A5C;border-left:4px solid var(--accent);padding:12px 16px;border-radius:6px;font-size:13px;color:var(--muted);margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card .label{font-size:12px;color:var(--muted)} .card .val{font-size:22px;font-weight:700;margin:4px 0}
+.card .pts{font-size:12px} .card .fuente{font-size:10.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.dot.g{background:var(--green)} .dot.y{background:var(--accent)} .dot.r{background:var(--red)}
+.global{background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:20px;text-align:center;margin-bottom:20px}
+.global .score{font-size:48px;font-weight:800;color:var(--accent)}
+.badge{padding:4px 14px;border-radius:14px;font-size:14px;font-weight:700}
+.badge.risk-on{background:rgba(76,175,80,.18);color:var(--green)} .badge.neutral{background:rgba(240,165,0,.18);color:var(--accent)} .badge.risk-off{background:rgba(224,82,99,.18);color:var(--red)}
+details{margin-top:6px} details summary{cursor:pointer;color:var(--accent);font-size:12px}
+pre{background:#0D1B2A;padding:10px;border-radius:6px;font-size:11px;overflow:auto;color:#B8C6D8}
+footer{margin-top:24px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:14px}
+</style></head><body>
+<h1>🌍 Subagente Macro · Contexto económico vía FRED</h1>
+<div class="sub">Datos REALES (no ilustrativos), obtenidos vía búsqueda web el 2026-07-01 · series FRED estándar</div>
+<div class="disclaimer"><b>Postura epistémica:</b> macro es señal LENTA — inclina el contexto, no dispara compras/ventas por sí sola.
+Un dato oficial (FRED/BLS) es sólido, pero su lectura y ponderación es opinión. Nota: los informes de paro (junio) e IPC (junio) de EEUU
+aún no se habían publicado a fecha de esta ejecución (se publican el 2026-07-02 y 2026-07-14 respectivamente) — se usan los últimos datos
+oficiales disponibles (mayo 2026). T10Y2Y se calculó como diferencia DGS10-DGS2 al no poder verificar el dato directo de FRED.
+Material educativo, no recomendación de inversión.</div>
+<div class="global">
+  <div class="label">SCORE MACRO GLOBAL</div>
+  <div class="score">60</div>
+  <span class="badge risk-on">RISK-ON</span>
+</div>
+<div class="grid" id="grid"></div>
+<details><summary>CONTRATO COMÚN (JSON)</summary><pre id="contrato"></pre></details>
+<footer>Subagente Macro · Pesos: FEDFUNDS 15% · DGS10 15% · T10Y2Y 25% · CPI 15% · UNRATE 15% · VIX 15% ·
+¿Tienen sentido estos umbrales y pesos? Este HTML invita a cuestionarlos.</footer>
+<script>
+const SERIES = {"FEDFUNDS": {"valor": 3.63, "fuente": "Effective Federal Funds Rate, dato 2026-06-29 (FRED/vía búsqueda web, consultado 2026-07-01)", "score": 39}, "DGS10": {"valor": 4.42, "fuente": "Rendimiento bono USA 10 años, ~4.40-4.46% principios de julio 2026 (tradingeconomics/FRED, consultado 2026-07-01), se usa punto medio 4.42%", "score": 32}, "T10Y2Y": {"valor": 0.24, "fuente": "Calculado como DGS10 (4.42%) - DGS2 (4.18%, tradingeconomics 2026-07-01) = +0.24 pp. Curva NO invertida.", "score": 62}, "CPI_YOY": {"valor": 4.2, "fuente": "CPI interanual (headline), informe BLS de mayo 2026 publicado 2026-06-10 (12 meses hasta mayo). El dato de junio se publica el 2026-07-14, aún no disponible hoy.", "score": 56}, "UNRATE": {"valor": 4.3, "fuente": "Tasa de paro, informe BLS de mayo 2026 (sin cambios respecto a abril). El dato de junio se publica el 2026-07-02, aún no disponible hoy.", "score": 96}, "VIXCLS": {"valor": 17.6, "fuente": "VIX cierre 30 jun 2026 (17.65) y apertura 1 jul 2026 (~17.54), rango sesión 16.27-17.75 (fuentes de mercado, consultado 2026-07-01)", "score": 76}};
+const CONTRATO = {"agente": "macro", "score": 60, "signal": "risk-on", "evidence": [{"dato": "FEDFUNDS", "valor": "3.63%", "fuente": "Effective Federal Funds Rate, dato 2026-06-29 (FRED/vía búsqueda web, consultado 2026-07-01)"}, {"dato": "DGS10", "valor": "4.42%", "fuente": "Rendimiento bono USA 10 años, ~4.40-4.46% principios de julio 2026 (tradingeconomics/FRED, consultado 2026-07-01), se usa punto medio 4.42%"}, {"dato": "T10Y2Y", "valor": "+0.24 pp", "fuente": "Calculado como DGS10 (4.42%) - DGS2 (4.18%, tradingeconomics 2026-07-01) = +0.24 pp. Curva NO invertida."}, {"dato": "CPI_YOY", "valor": "4.2%", "fuente": "CPI interanual (headline), informe BLS de mayo 2026 publicado 2026-06-10 (12 meses hasta mayo). El dato de junio se publica el 2026-07-14, aún no disponible hoy."}, {"dato": "UNRATE", "valor": "4.3%", "fuente": "Tasa de paro, informe BLS de mayo 2026 (sin cambios respecto a abril). El dato de junio se publica el 2026-07-02, aún no disponible hoy."}, {"dato": "VIXCLS", "valor": 17.6, "fuente": "VIX cierre 30 jun 2026 (17.65) y apertura 1 jul 2026 (~17.54), rango sesión 16.27-17.75 (fuentes de mercado, consultado 2026-07-01)"}], "datos_faltantes": []};
+function dotClass(p){ return p>=66?'g':(p<=33?'r':'y'); }
+document.getElementById('grid').innerHTML = Object.entries(SERIES).map(([k,v])=>`
+  <div class="card">
+    <div class="label">${k}</div>
+    <div class="val"><span class="dot ${dotClass(v.score)}"></span>${v.valor}</div>
+    <div class="pts">${v.score} pts</div>
+    <div class="fuente">${v.fuente}</div>
+  </div>
+`).join('');
+document.getElementById('contrato').textContent = JSON.stringify(CONTRATO, null, 2);
+</script>
+</body></html>

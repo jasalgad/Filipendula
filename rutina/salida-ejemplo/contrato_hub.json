@@ -1,0 +1,74 @@
+[
+  {
+    "ticker": "JPM",
+    "hub_score": 79.0,
+    "ejes": {
+      "macro": 60,
+      "fund": 68,
+      "tec": 92.8,
+      "sent": 100
+    },
+    "desacuerdo": "bajo",
+    "veredicto": "compra"
+  },
+  {
+    "ticker": "AAPL",
+    "hub_score": 77.3,
+    "ejes": {
+      "macro": 60,
+      "fund": 66,
+      "tec": 93.0,
+      "sent": 95
+    },
+    "desacuerdo": "bajo",
+    "veredicto": "compra"
+  },
+  {
+    "ticker": "MU",
+    "hub_score": 76.1,
+    "ejes": {
+      "macro": 60,
+      "fund": 74,
+      "tec": 75.9,
+      "sent": 96
+    },
+    "desacuerdo": "bajo",
+    "veredicto": "compra"
+  },
+  {
+    "ticker": "GOOGL",
+    "hub_score": 75.1,
+    "ejes": {
+      "macro": 60,
+      "fund": 62,
+      "tec": 88.8,
+      "sent": 96
+    },
+    "desacuerdo": "bajo",
+    "veredicto": "compra"
+  },
+  {
+    "ticker": "AMGN",
+    "hub_score": 69.7,
+    "ejes": {
+      "macro": 60,
+      "fund": 69,
+      "tec": 91.0,
+      "sent": 54
+    },
+    "desacuerdo": "bajo",
+    "veredicto": "compra"
+  },
+  {
+    "ticker": "XYZ",
+    "hub_score": 59.2,
+    "ejes": {
+      "macro": 60,
+      "fund": 17,
+      "tec": 91.2,
+      "sent": 92
+    },
+    "desacuerdo": "alto",
+    "veredicto": "neutral"
+  }
+]

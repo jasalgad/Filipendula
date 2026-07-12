@@ -1,0 +1,92 @@
+[
+  {
+    "ticker": "JPM",
+    "nombre": "JPMorgan Chase",
+    "score_screener": 98.7,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "GOOGL",
+    "nombre": "Alphabet",
+    "score_screener": 97.3,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "AMGN",
+    "nombre": "Amgen",
+    "score_screener": 94.4,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "AAPL",
+    "nombre": "Apple",
+    "score_screener": 90.8,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "MU",
+    "nombre": "Micron",
+    "score_screener": 87.8,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "NVDA",
+    "nombre": "Nvidia",
+    "score_screener": 87.6,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "QCOM",
+    "nombre": "Qualcomm",
+    "score_screener": 86.8,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "XYZ",
+    "nombre": "Block Inc",
+    "score_screener": 84.4,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "ADM",
+    "nombre": "ADM",
+    "score_screener": 84.3,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "MS",
+    "nombre": "Morgan Stanley",
+    "score_screener": 83.2,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "CB",
+    "nombre": "Chubb",
+    "score_screener": 81.2,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "CSCO",
+    "nombre": "Cisco",
+    "score_screener": 80.4,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "TT",
+    "nombre": "Trane Technologies",
+    "score_screener": 77.1,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "AMD",
+    "nombre": "AMD",
+    "score_screener": 76.2,
+    "signal_screener": "compra"
+  },
+  {
+    "ticker": "HOOD",
+    "nombre": "Robinhood",
+    "score_screener": 73.1,
+    "signal_screener": "compra"
+  }
+]
