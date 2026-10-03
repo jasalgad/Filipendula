@@ -1,0 +1,10 @@
+# Clave JSON de la cuenta de servicio de Google Analytics
+*service-account*.json
+*service_account*.json
+*credentials*.json
+ga4-key*.json
+ga4_key*.json
+clave*.json
+
+# Informes exportados
+*.csv
